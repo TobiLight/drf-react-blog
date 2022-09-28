@@ -1,0 +1,8 @@
+django
+djangorestframework
+django-cors-headers
+python-dotenv
+dj-rest-auth
+dj-rest-auth[with_social]
+django-allauth
+djangorestframework-simplejwt==4.6.0
