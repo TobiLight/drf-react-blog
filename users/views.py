@@ -6,7 +6,7 @@ from rest_framework import status
 from rest_framework.generics import GenericAPIView
 from django.contrib.sites.shortcuts import get_current_site
 from users.utils import Util
-from .serializers import  LoginSerializer, SignupSerializer, UserProfileSerializer
+from .serializers import  LoginSerializer, ReverificationSerializer, SignupSerializer, UserProfileSerializer
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from .models import User
@@ -25,10 +25,10 @@ class SignUp(GenericAPIView):
 
     def post(self, request):
         user_input = request.data
-        serialier = self.serializer_class(data=user_input)
-        serialier.is_valid(raise_exception=True)
-        serialier.save()
-        user = User.objects.get(email=serialier.data['email'])
+        serializer = self.serializer_class(data=user_input)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        user = User.objects.get(email=serializer.data['email'])
         token = RefreshToken.for_user(user).access_token
         current_site = get_current_site(request).domain
         relative_link = reverse('verify-email')
@@ -45,9 +45,9 @@ class SignUp(GenericAPIView):
             "to_email": user.email
         }
         
-        print(dotenv_values('.env')['EMAIL_HOST_PASSWORD'], data['to_email'])
         Util.send_email(data)
-        return Response({"message": "Account created successfully!", "user": serialier.data}, status=status.HTTP_201_CREATED)
+        return Response({"message": "Account created successfully!", "user": serializer.data}, status=status.HTTP_201_CREATED)
+
 
 class VerifyEmail(GenericAPIView):
     """
@@ -71,7 +71,6 @@ class VerifyEmail(GenericAPIView):
         except jwt.DecodeError:
             return Response({"error": f'An error occured while trying to verify your email! Go to http://localhost:8000/resend-email-verification to resend email verification'})
         return Response({'message': "Your email has already been verified! Please login."})
-    
     
     
 class Login(GenericAPIView):
@@ -103,14 +102,47 @@ class ResendVerificationEmail(GenericAPIView):
     """
     Resend Email Verification if token has expired
     """
+    serializer_class = ReverificationSerializer
     
     def get(self, request):
         return Response({"message": "Send post request"})
     
-    # def post(self, request):
+    def post(self, request):
+        email = request.data.get("email")
+        if email is None:
+            return Response({"error": "Please provide a valid email address!"}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer =  self.serializer_class({"email": email})
+        try:
+            user = User.objects.get(email=serializer.data['email'])
+        except User.DoesNotExist:
+            return Response({'error': 'This user does not exist!'}, status=status.HTTP_404_NOT_FOUND)
         
-
-
+        if user.is_verified:
+            return Response({"error": "You cannot verify your email twice!"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if not user.is_active:
+            return Response({"error": "An error has occured!"}, status=status.HTTP_403_FORBIDDEN)
+        
+        token = RefreshToken.for_user(user).access_token
+        current_site = get_current_site(request).domain
+        relative_link = reverse('verify-email')
+        absurl = 'http://' + current_site + relative_link + '?token=' + str(token)
+        if user.email and user.username is None:
+            email_body = f'Hi {user.email}, \n \nUse the link below to verify your account. \n\n{absurl}'
+        else:
+            email_body = f'Hi {user.username}, \n \nUse the link below to verify your account. \n\n{absurl}'
+        data = {
+            "domain": absurl,
+            "email_body": email_body,
+            "email_subject": "Verify your email",
+            "from_email": dotenv_values('.env')['EMAIL_HOST_USERNAME'],
+            "to_email": user.email
+        }
+        
+        Util.send_email(data)
+        return Response({"message": "Sent! Please check your email."})
+        
 class UserProfile(GenericAPIView):
     """
     User Profile Page
@@ -132,7 +164,6 @@ class UserProfile(GenericAPIView):
             
             if not user.is_active:
                 return Response({"message": "Your account is not active!"}, status=status.HTTP_403_FORBIDDEN)
-            
         except jwt.ExpiredSignatureError:
             return Response({"error": f'Token has expired. Go to http://localhost:8000/resend-email-verification to resend email verification.'}, status=status.HTTP_401_UNAUTHORIZED)
         except jwt.DecodeError:

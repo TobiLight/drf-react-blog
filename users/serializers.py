@@ -40,4 +40,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
         model = User
         fields = ['username', 'email', 'is_verified', 'is_active', 'created_at']
         
-
+class ReverificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['email']
