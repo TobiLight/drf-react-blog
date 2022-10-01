@@ -7,7 +7,7 @@ from django.urls import reverse
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
     actions = ('verify_user', 'ban_user', 'suspend_user')
-    list_display = ('email', 'verified', 'username', 'created_at', 'delete')
+    list_display = ('email', 'verified', 'username', 'auth_provider', 'created_at', 'delete')
     search_fields = ('username', 'email')
     list_filter = ('is_active', 'is_staff', 'is_verified')
     list_per_page = 10

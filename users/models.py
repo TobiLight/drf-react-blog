@@ -1,9 +1,10 @@
 from datetime import timezone
+from enum import unique
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.db import models
 import uuid
-# Create your models here.
+from rest_framework_simplejwt.tokens import RefreshToken
 
 
 class CustomUserManager(BaseUserManager):
@@ -49,12 +50,15 @@ class CustomUserManager(BaseUserManager):
         return self.create_user(email=email, username=username, password=password, ** extra_fields)
 
 
+AUTH_PROVIDER = {'google': 'google', 'twitter': 'twitter', 'facebook': 'facebook', 'email': 'email'}
+
 class User(AbstractBaseUser, PermissionsMixin):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, unique=True)
     username = models.CharField(
         unique=True, max_length=40, blank=True, null=True, db_index=True)
     email = models.EmailField(
-        unique=True, verbose_name="email address", max_length=120, db_index=True)
+        unique=True, verbose_name="Email", max_length=120, db_index=True)
+    auth_provider = models.CharField(blank=False, null=False, max_length=255, default=AUTH_PROVIDER.get('email'))
     is_verified = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
@@ -72,4 +76,8 @@ class User(AbstractBaseUser, PermissionsMixin):
         return self.email
 
     def tokens(self):
-        pass
+        refresh = RefreshToken.for_user(self)
+        return {
+            'refresh': str(refresh),
+            'access': str(refresh.access_token)
+        }

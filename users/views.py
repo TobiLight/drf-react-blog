@@ -1,12 +1,9 @@
-import datetime
-from rest_framework.authtoken.models import Token
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.authentication import TokenAuthentication
 from rest_framework import status
 from rest_framework.generics import GenericAPIView
 from django.contrib.sites.shortcuts import get_current_site
 from users.utils import Util
-from .serializers import  LoginSerializer, ReverificationSerializer, SignupSerializer, UserProfileSerializer
+from .serializers import  LoginSerializer, ReverificationSerializer, SignupSerializer
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from .models import User
@@ -15,7 +12,6 @@ from dotenv import dotenv_values
 import jwt
 from django.contrib.auth import get_user_model
 from django.conf import settings
-from django.contrib.auth import authenticate
 
 class SignUp(GenericAPIView):
     """
@@ -81,21 +77,12 @@ class Login(GenericAPIView):
     serializer_class = LoginSerializer
    
     def post(self, request):
-        email = request.data.get("email")
-        password = request.data.get("password")
-        
-        if email is None or password is None:
-            return Response({"error": "Please provide an email or password!"}, status=status.HTTP_400_BAD_REQUEST)
-        
-        user = authenticate(email=email, password=password)
-        
-        if not user:
-            return Response({"error": "Invalid credentials!"}, status=status.HTTP_404_NOT_FOUND)
-        
-        token = RefreshToken.for_user(user).access_token
-        token.set_exp(lifetime=datetime.timedelta(hours=3))
-        print(token)
-        return Response({"message": "Login successful!", "token": str(token)}, status=status.HTTP_200_OK)
+       serializer_class = LoginSerializer
+
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
         
 
 class ResendVerificationEmail(GenericAPIView):
@@ -143,6 +130,7 @@ class ResendVerificationEmail(GenericAPIView):
         Util.send_email(data)
         return Response({"message": "Sent! Please check your email."})
         
+
 class UserProfile(GenericAPIView):
     """
     User Profile Page
@@ -152,6 +140,7 @@ class UserProfile(GenericAPIView):
     def get(self, request):
         User = get_user_model()
         token = request.headers['Authorization'].split()[1]
+        print(token)
         try:
             payload = jwt.decode(token, settings.SECRET_KEY,algorithms=['HS256'],verify=True)
             user = User.objects.get(id=payload['user_id'])

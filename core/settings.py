@@ -30,6 +30,14 @@ ALLOWED_HOSTS = []
 
 AUTH_USER_MODEL = 'users.User'
 
+AUTHENTICATION_BACKENDS = [
+    # Needed to login by username in Django admin, regardless of `allauth`
+    'django.contrib.auth.backends.ModelBackend',
+
+    # `allauth` specific authentication methods, such as login by e-mail
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -41,12 +49,33 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework.authtoken',
+    # 'django.contrib.sites',
+    # 'dj_rest_auth',
+    # 'allauth',
+    # 'allauth.account',
+    # 'allauth.socialaccount',
+    # 'dj_rest_auth.registration',
+    # 'allauth.socialaccount.providers.google',
     'api',
     'users',
-    # 'social_auth'
+    'social_auth'
 ]
 # SITE ID FOR DJ-REST-AUTH
-SITE_ID = 1
+# SITE_ID = 1
+
+# Provider specific settings
+# SOCIALACCOUNT_PROVIDERS = {
+#     'google': {
+#         # For each OAuth based provider, either add a ``SocialApp``
+#         # (``socialaccount`` app) containing the required client
+#         # credentials, or list them here:
+#         'APP': {
+#             'client_id': dotenv_values('.env')['GOOGLE_CLIENT_ID'],
+#             'secret': dotenv_values('.env')['GOOGLE_CLIENT_SECRET'],
+#             'key': dotenv_values('.env')['SECRET_KEY']
+#         }
+#     }
+# }
 # Djangorestframework-jwt
 REST_USE_JWT = True
 
@@ -103,7 +132,13 @@ REST_FRAMEWORK = {
     
 }
 
-
+# all auth email config
+# ACCOUNT_EMAIL_REQUIRED = True #Email is required when signing up
+# ACCOUNT_AUTHENTICATION_METHOD = "email" #Users can only log in using their 
+# ACCOUNT_USERNAME_REQUIRED = False
+# ACCOUNT_USER_MODEL_USERNAME_FIELD = None
+# ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
+# LOGIN_REDIRECT_URL = '/api/profile/'
 
 
 # Password validation
@@ -153,3 +188,6 @@ EMAIL_PORT = 587
 EMAIL_HOST_USER = dotenv_values('.env')['EMAIL_HOST_USERNAME']
 EMAIL_HOST_PASSWORD = dotenv_values('.env')['EMAIL_HOST_PASSWORD']
 PASSWORD_RESET_TIMEOUT = 14400
+
+JWT_AUTH_COOKIE = 'drf-blog-auth'
+JWT_AUTH_REFRESH_COOKIE = 'drf-blog-refresh-token'
