@@ -10,8 +10,8 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.1/ref/settings/
 """
 
+from datetime import timedelta
 from pathlib import Path
-from pickle import TRUE
 from dotenv import dotenv_values
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework.authtoken',
+    'rest_framework_simplejwt',
     # 'django.contrib.sites',
     # 'dj_rest_auth',
     # 'allauth',
@@ -191,3 +192,7 @@ PASSWORD_RESET_TIMEOUT = 14400
 
 JWT_AUTH_COOKIE = 'drf-blog-auth'
 JWT_AUTH_REFRESH_COOKIE = 'drf-blog-refresh-token'
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),
+    'REFRESH_TOKEN_LIFETIME': timedelta(minutes=1800)
+}

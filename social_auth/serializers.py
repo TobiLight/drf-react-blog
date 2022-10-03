@@ -27,3 +27,17 @@ class GoogleSocialAuthSerializer(serializers.Serializer):
         return register_social_user(
             provider=provider, user_id=user_id, email=email, name=name
         )
+        
+
+class TokenSerializer(serializers.Serializer):
+    token_type = serializers.CharField()
+    # exp = serializers.IntegerField()
+    # iat = serializers.IntegerField()
+    # jti = serializers.CharField()
+    # user_id = serializers.CharField()
+    # username = serializers.CharField()
+    google_token_info = dict()
+    google_token_info['access_token'] = serializers.CharField()
+    
+    class Meta:
+        fields = ['token_type', 'google_token_info']

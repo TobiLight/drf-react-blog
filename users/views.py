@@ -5,13 +5,15 @@ from django.contrib.sites.shortcuts import get_current_site
 from users.utils import Util
 from .serializers import  LoginSerializer, ReverificationSerializer, SignupSerializer
 from rest_framework.response import Response
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.tokens import RefreshToken, Token
 from .models import User
 from django.urls import reverse
 from dotenv import dotenv_values
 import jwt
 from django.contrib.auth import get_user_model
 from django.conf import settings
+import datetime
+import time
 
 class SignUp(GenericAPIView):
     """
@@ -140,9 +142,8 @@ class UserProfile(GenericAPIView):
     def get(self, request):
         User = get_user_model()
         token = request.headers['Authorization'].split()[1]
-        print(token)
         try:
-            payload = jwt.decode(token, settings.SECRET_KEY,algorithms=['HS256'],verify=True)
+            payload = jwt.decode(token, settings.SECRET_KEY ,algorithms=['HS256'],verify=True)
             user = User.objects.get(id=payload['user_id'])
             
             if user is None:
@@ -154,9 +155,9 @@ class UserProfile(GenericAPIView):
             if not user.is_active:
                 return Response({"message": "Your account is not active!"}, status=status.HTTP_403_FORBIDDEN)
         except jwt.ExpiredSignatureError:
-            return Response({"error": f'Token has expired. Go to http://localhost:8000/resend-email-verification to resend email verification.'}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({"error": f'Token has expired.'}, status=status.HTTP_401_UNAUTHORIZED)
         except jwt.DecodeError:
-            return Response({"error": f'An error occured! Go to http://localhost:8000/resend-email-verification to resend email verification'}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({"error": f'An error occured!'}, status=status.HTTP_401_UNAUTHORIZED)
         return Response({
             "data": {
                 "id": user.id,
